@@ -25,21 +25,30 @@ import java.util.concurrent.TimeUnit;
 public class RedisLock {
 
     @Autowired
-    private StringRedisTemplate stringRedisTemplate;
-
-    @Autowired
     private RedisTemplate redisTemplate;
 
-    public boolean lock(String lockKey,String value){
-        return stringRedisTemplate.opsForValue().setIfAbsent(lockKey,value,10,TimeUnit.SECONDS);
+    /**
+     * 上锁
+     * @param lockKey 锁的键
+     * @param requestId 当前用户上锁的值
+     * @return true上锁成功，false上锁失败
+     */
+    public boolean lock(String lockKey,String requestId){
+        return redisTemplate.opsForValue().setIfAbsent(lockKey,requestId,10,TimeUnit.SECONDS);
     }
 
-    public boolean unlock(String lockKey,String value){
+    /**
+     * 释放锁
+     * @param lockKey
+     * @param requestId
+     * @return
+     */
+    public boolean unlock(String lockKey,String requestId){
         String script = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
         DefaultRedisScript<String> redisScript = new DefaultRedisScript<>();
         redisScript.setResultType(String.class);
         redisScript.setScriptText(script);
-        Boolean result = (Boolean)this.redisTemplate.execute(redisScript,redisTemplate.getStringSerializer(),redisTemplate.getStringSerializer(), Collections.singletonList(lockKey),value);
+        Boolean result = (Boolean)this.redisTemplate.execute(redisScript,redisTemplate.getStringSerializer(),redisTemplate.getStringSerializer(), Collections.singletonList(lockKey),requestId);
         return result == null ? false : result;
     }
 }
