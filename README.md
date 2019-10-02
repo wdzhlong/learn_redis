@@ -1,2 +1,1 @@
-# learn_redis
-redis学习记录
+# redis分布式锁实现
